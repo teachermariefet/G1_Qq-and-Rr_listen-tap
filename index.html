@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qq & Rr Beginning Letter Listening Game</title>
+    <!-- Google Font: Balsamiq Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Balsamiq+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Maximize Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Balsamiq Sans', cursive, sans-serif;
+            background-color: #f0f9ff;
+            color: #2d3748;
+        }
+
+        /* Container & Aspect ratio handling */
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.3s ease-in-out;
+        }
+
+        /* Screen States */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease-in-out;
+            z-index: 10;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Fullscreen Toggle Button */
+        #fullscreen-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            border: 4px solid #4a5568;
+            border-radius: 50%;
+            width: 64px;
+            height: 64px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            color: #2d3748;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            transition: transform 0.1s ease, background 0.2s;
+        }
+
+        #fullscreen-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* Home Screen */
+        .home-card {
+            background: rgba(255, 255, 255, 0.92);
+            padding: 40px 60px;
+            border-radius: 32px;
+            border: 6px solid #4299e1;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 90%;
+        }
+
+        .title {
+            font-size: 3.5rem;
+            color: #2b6cb0;
+            margin: 0 0 20px 0;
+            text-shadow: 2px 2px 0px #ebf8ff;
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            color: #4a5568;
+            margin-bottom: 40px;
+        }
+
+        .btn-large {
+            font-family: 'Balsamiq Sans', cursive, sans-serif;
+            font-size: 2.5rem;
+            font-weight: bold;
+            padding: 20px 60px;
+            background: linear-gradient(180deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: 4px solid #276749;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(56, 161, 105, 0.4), inset 0 4px 0 rgba(255,255,255,0.4);
+            transition: transform 0.1s ease, filter 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn-large:hover {
+            filter: brightness(1.08);
+        }
+
+        .btn-large:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 10px rgba(56, 161, 105, 0.4);
+        }
+
+        /* HUD - Top Bar */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 24px;
+            z-index: 50;
+        }
+
+        .hud-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 28px;
+            border-radius: 24px;
+            border: 4px solid #3182ce;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2b6cb0;
+        }
+
+        .hud-card i {
+            font-size: 2.2rem;
+        }
+
+        .hud-card.timer-card {
+            border-color: #dd6b20;
+            color: #c05621;
+        }
+
+        /* Gameplay Area */
+        #gameplay-screen {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 80px 40px 40px 40px;
+            gap: 40px;
+        }
+
+        .audio-replay-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 0;
+        }
+
+        .btn-audio {
+            background: linear-gradient(180deg, #ecc94b 0%, #d69e2e 100%);
+            border: 5px solid #b7791f;
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5rem;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(214, 158, 46, 0.5), inset 0 4px 0 rgba(255,255,255,0.5);
+            transition: transform 0.15s ease;
+        }
+
+        .btn-audio:active {
+            transform: scale(0.92);
+        }
+
+        .btn-audio.playing {
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(214, 158, 46, 0.7); }
+            100% { transform: scale(1.1); box-shadow: 0 0 0 20px rgba(214, 158, 46, 0); }
+        }
+
+        /* Choices Area */
+        .choices-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 60px;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            transform: none;
+        }
+
+        .choice-card {
+            flex: 1;
+            max-width: 380px;
+            height: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 8px solid #cbd5e0;
+            border-radius: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            transition: transform 0.15s ease, border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .choice-card:hover {
+            transform: translateY(-8px);
+            border-color: #4299e1;
+            box-shadow: 0 20px 35px rgba(66, 153, 225, 0.3);
+        }
+
+        .choice-card:active {
+            transform: scale(0.95);
+        }
+
+        .choice-card.disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .choice-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        /* Fallback text rendering if PNG fails to load */
+        .fallback-letter {
+            font-size: 8rem;
+            font-weight: bold;
+            color: #2b6cb0;
+        }
+
+        /* Feedback Animation Overlay on Cards */
+        .choice-card.correct {
+            border-color: #48bb78 !important;
+            background-color: #f0fff4 !important;
+            animation: bounce 0.5s ease;
+        }
+
+        .choice-card.incorrect {
+            border-color: #f56565 !important;
+            background-color: #fff5f5 !important;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-12px); }
+            40%, 80% { transform: translateX(12px); }
+        }
+
+        /* End Screen Overlay */
+        .end-card {
+            background: rgba(255, 255, 255, 0.96);
+            padding: 50px 80px;
+            border-radius: 40px;
+            border: 8px solid #ed8936;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 90%;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .game-over-title {
+            font-size: 4rem;
+            color: #c05621;
+            margin: 0 0 20px 0;
+        }
+
+        .final-score-container {
+            font-size: 2.5rem;
+            color: #4a5568;
+            margin-bottom: 40px;
+        }
+
+        .final-score-num {
+            font-size: 4.5rem;
+            font-weight: bold;
+            color: #3182ce;
+            display: block;
+            margin-top: 10px;
+        }
+
+        /* Responsive Tweaks for SmartBoard / Various screen sizes */
+        @media (max-height: 700px) {
+            .choices-container { height: 240px; }
+            .choice-card { height: 220px; }
+            .btn-audio { width: 90px; height: 90px; font-size: 2.5rem; }
+            .title { font-size: 2.5rem; }
+            #gameplay-screen { padding-top: 90px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Fullscreen Button -->
+        <button idfullscreen-btn id="fullscreen-btn" title="Toggle Fullscreen">
+            <i class="fa-solid fa-expand"></i>
+        </button>
+
+        <!-- HUD (Heads Up Display) -->
+        <div id="hud" style="display: none;">
+            <div class="hud-card">
+                <i class="fa-solid fa-star" style="color: #ecc94b;"></i>
+                <span>Score: <span id="score-display">0</span></span>
+            </div>
+            <div class="hud-card timer-card">
+                <i class="fa-solid fa-clock"></i>
+                <span>Time: <span id="timer-display">60</span>s</span>
+            </div>
+        </div>
+
+        <!-- Screen 1: Home Screen -->
+        <div id="home-screen" class="screen active">
+            <div class="home-card">
+                <h1 class="title">Listening Game</h1>
+                <div class="subtitle">Listen and choose the beginning letter: <strong>Qq</strong> or <strong>Rr</strong></div>
+                <button id="start-btn" class="btn-large">
+                    <i class="fa-solid fa-play" style="margin-right: 15px;"></i>Start Game
+                </button>
+            </div>
+        </div>
+
+        <!-- Screen 2: Gameplay Screen -->
+        <div id="gameplay-screen" class="screen">
+            <!-- Audio Replay Icon Button -->
+            <div class="audio-replay-container">
+                <button id="replay-audio-btn" class="btn-audio" title="Listen Again">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+
+            <!-- Letter Choices -->
+            <div class="choices-container">
+                <div class="choice-card" id="choice-Qq" data-letter="Qq">
+                    <img src="Qq.png" alt="Qq" class="choice-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div class="fallback-letter" style="display:none;">Qq</div>
+                </div>
+                <div class="choice-card" id="choice-Rr" data-letter="Rr">
+                    <img src="Rr.png" alt="Rr" class="choice-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div class="fallback-letter" style="display:none;">Rr</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 3: Game Over Screen -->
+        <div id="end-screen" class="screen">
+            <div class="end-card">
+                <h1 class="game-over-title">Time's Up!</h1>
+                <div class="final-score-container">
+                    Your Final Score
+                    <span id="final-score" class="final-score-num">0</span>
+                </div>
+                <button id="play-again-btn" class="btn-large">
+                    <i class="fa-solid fa-rotate-right" style="margin-right: 15px;"></i>Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Music Element -->
+    <audio id="bgm" loop preload="auto">
+        <source src="bgm.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // --- GAME DATA & CONFIGURATION ---
+        const VOCABULARY = [
+            { word: 'queen', letter: 'Qq', audioSrc: 'queen.mp3' },
+            { word: 'quilt', letter: 'Qq', audioSrc: 'quilt.mp3' },
+            { word: 'quiet', letter: 'Qq', audioSrc: 'quiet.mp3' },
+            { word: 'red', letter: 'Rr', audioSrc: 'red.mp3' },
+            { word: 'ruler', letter: 'Rr', audioSrc: 'ruler.mp3' },
+            { word: 'rabbit', letter: 'Rr', audioSrc: 'rabbit.mp3' }
+        ];
+
+        const GAME_DURATION = 60; // seconds
+        const BGM_VOLUME = 0.10; // 10% volume
+
+        // --- GAME STATE ---
+        let score = 0;
+        let timeRemaining = GAME_DURATION;
+        let timerInterval = null;
+        let currentWordObj = null;
+        let previousWordObj = null;
+        let isAudioPlaying = false;
+        let isInputLocked = false;
+        let gameActive = false;
+
+        // --- AUDIO SYSTEM ---
+        const bgm = document.getElementById('bgm');
+        bgm.volume = BGM_VOLUME;
+
+        // Audio element cache for preloaded vocab audios
+        const audioCache = {};
+        VOCABULARY.forEach(item => {
+            const audio = new Audio();
+            audio.src = item.audioSrc;
+            audio.preload = 'auto';
+            audioCache[item.word] = audio;
+        });
+
+        // Web Audio API Context for synthesized SFX fallbacks (guarantees sound works seamlessly)
+        let audioCtx = null;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Pleasant Cheerful Chime SFX
+        function playCorrectSFX() {
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc1.type = 'sine';
+            osc2.type = 'triangle';
+
+            // High double-tone chime (E5 -> A5)
+            osc1.frequency.setValueAtTime(659.25, now);
+            osc1.frequency.exponentialRampToValueAtTime(880.00, now + 0.1);
+
+            osc2.frequency.setValueAtTime(659.25, now);
+            osc2.frequency.exponentialRampToValueAtTime(880.00, now + 0.1);
+
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc1.start(now);
+            osc2.start(now);
+            osc1.stop(now + 0.4);
+            osc2.stop(now + 0.4);
+        }
+
+        // Short Buzzing SFX
+        function playIncorrectSFX() {
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.setValueAtTime(110, now + 0.1);
+
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.3);
+        }
+
+        // Play vocabulary pronunciation
+        function playVocabAudio(wordObj, callback) {
+            isAudioPlaying = true;
+            isInputLocked = true;
+            updateAudioButtonUI(true);
+
+            // Duck BGM during vocabulary speech
+            if (bgm && !bgm.paused) {
+                bgm.volume = BGM_VOLUME * 0.2;
+            }
+
+            const audio = audioCache[wordObj.word];
+
+            const onAudioEnd = () => {
+                isAudioPlaying = false;
+                isInputLocked = false;
+                updateAudioButtonUI(false);
+                // Restore BGM volume
+                if (bgm && !bgm.paused) {
+                    bgm.volume = BGM_VOLUME;
+                }
+                if (callback) callback();
+            };
+
+            if (audio) {
+                audio.currentTime = 0;
+                const playPromise = audio.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        audio.onended = onAudioEnd;
+                    }).catch(err => {
+                        console.warn(`External audio file (${wordObj.audioSrc}) failed or missing. Using Speech Synthesis fallback.`, err);
+                        fallbackSpeechSynthesis(wordObj.word, onAudioEnd);
+                    });
+                } else {
+                    audio.onended = onAudioEnd;
+                }
+            } else {
+                fallbackSpeechSynthesis(wordObj.word, onAudioEnd);
+            }
+        }
+
+        // Robust Fallback using Web Speech API if external mp3 files are missing
+        function fallbackSpeechSynthesis(text, onEnd) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Clear queue
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.85; // Slightly slower for clear EFL learning
+                utterance.onend = onEnd;
+                utterance.onerror = onEnd;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                // If speech synthesis unavailable, delay briefly then unlock
+                setTimeout(onEnd, 1200);
+            }
+        }
+
+        function updateAudioButtonUI(playing) {
+            const btn = document.getElementById('replay-audio-btn');
+            if (playing) {
+                btn.classList.add('playing');
+            } else {
+                btn.classList.remove('playing');
+            }
+        }
+
+        // --- UI & SCREEN NAVIGATION ---
+        const gameContainer = document.getElementById('game-container');
+        const homeScreen = document.getElementById('home-screen');
+        const gameplayScreen = document.getElementById('gameplay-screen');
+        const endScreen = document.getElementById('end-screen');
+        const hud = document.getElementById('hud');
+        const scoreDisplay = document.getElementById('score-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const finalScoreDisplay = document.getElementById('final-score');
+
+        function setBackground(screenName) {
+            if (screenName === 'home') {
+                gameContainer.style.backgroundImage = "url('homescreen.png')";
+            } else if (screenName === 'gameplay') {
+                gameContainer.style.backgroundImage = "url('gamescreen.png')";
+            }
+        }
+
+        function showScreen(screen) {
+            [homeScreen, gameplayScreen, endScreen].forEach(s => s.classList.remove('active'));
+            screen.classList.add('active');
+        }
+
+        // --- GAME LOGIC & FLOW ---
+
+        function startGame() {
+            initAudioContext();
+
+            // Reset Game State
+            score = 0;
+            timeRemaining = GAME_DURATION;
+            previousWordObj = null;
+            gameActive = true;
+
+            // UI Update
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = timeRemaining;
+            hud.style.display = 'flex';
+            
+            setBackground('gameplay');
+            showScreen(gameplayScreen);
+
+            // Start BGM
+            try {
+                bgm.currentTime = 0;
+                bgm.volume = BGM_VOLUME;
+                bgm.play().catch(e => console.log("BGM autoplay prevented until interaction:", e));
+            } catch (e) {}
+
+            // Start Timer
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+
+            // Load First Word
+            nextTurn();
+        }
+
+        function updateTimer() {
+            if (!gameActive) return;
+            
+            timeRemaining--;
+            timerDisplay.textContent = timeRemaining;
+
+            if (timeRemaining <= 0) {
+                endGame();
+            }
+        }
+
+        function selectRandomWord() {
+            let availableWords = VOCABULARY;
+            // Prevent back-to-back repetition
+            if (previousWordObj) {
+                availableWords = VOCABULARY.filter(item => item.word !== previousWordObj.word);
+            }
+            const randomIndex = Math.floor(Math.random() * availableWords.length);
+            const selected = availableWords[randomIndex];
+            previousWordObj = selected;
+            return selected;
+        }
+
+        function nextTurn() {
+            if (!gameActive) return;
+
+            // Reset Choice Cards Visuals
+            const cards = document.querySelectorAll('.choice-card');
+            cards.forEach(card => {
+                card.classList.remove('correct', 'incorrect', 'disabled');
+            });
+
+            // Select non-repeating word
+            currentWordObj = selectRandomWord();
+
+            // Play audio
+            playVocabAudio(currentWordObj);
+        }
+
+        function handleChoice(selectedLetter, cardElement) {
+            // Guard conditions
+            if (!gameActive || isInputLocked || isAudioPlaying) return;
+
+            isInputLocked = true; // Lock further input during feedback
+
+            const isCorrect = (selectedLetter === currentWordObj.letter);
+
+            // Disable choices during feedback interval
+            document.querySelectorAll('.choice-card').forEach(c => c.classList.add('disabled'));
+
+            if (isCorrect) {
+                score += 1;
+                scoreDisplay.textContent = score;
+                cardElement.classList.add('correct');
+                playCorrectSFX();
+            } else {
+                cardElement.classList.add('incorrect');
+                playIncorrectSFX();
+            }
+
+            // Advance to next word after short feedback pause
+            setTimeout(() => {
+                if (gameActive) {
+                    nextTurn();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+
+            // Stop all audio & BGM
+            if (bgm) {
+                bgm.pause();
+                bgm.currentTime = 0;
+            }
+            Object.values(audioCache).forEach(a => {
+                a.pause();
+                a.currentTime = 0;
+            });
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+
+            // Hide HUD & Show End Screen
+            hud.style.display = 'none';
+            finalScoreDisplay.textContent = score;
+            showScreen(endScreen);
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // Start Button
+        document.getElementById('start-btn').addEventListener('click', startGame);
+
+        // Play Again Button
+        document.getElementById('play-again-btn').addEventListener('click', startGame);
+
+        // Replay Audio Button
+        document.getElementById('replay-audio-btn').addEventListener('click', () => {
+            if (gameActive && !isAudioPlaying && currentWordObj) {
+                playVocabAudio(currentWordObj);
+            }
+        });
+
+        // Choice Cards Click & Touch Handling
+        document.querySelectorAll('.choice-card').forEach(card => {
+            card.addEventListener('click', function () {
+                const letter = this.getAttribute('data-letter');
+                handleChoice(letter, this);
+            });
+        });
+
+        // Fullscreen Toggle Logic
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                const docEl = document.documentElement;
+                if (docEl.requestFullscreen) {
+                    docEl.requestFullscreen();
+                } else if (docEl.webkitRequestFullscreen) {
+                    docEl.webkitRequestFullscreen();
+                }
+                fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+                fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+            }
+        });
+
+        // Initialize default background
+        setBackground('home');
+    </script>
+</body>
+</html>
